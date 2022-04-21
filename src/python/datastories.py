@@ -8,40 +8,54 @@ import requests
 import sys
 
 
-def login(url):
-    http = f'{url}api/v1/security/login'
-    headers = { 'Content-type': 'application/json', }
-    data = '{ "password": "admin", "provider": "db",  "refresh": true,  "username": "admin"}'
-    response = requests.post(http, headers=headers, data=data)
-    print(response.json())
-    return response.json()['access_token']
+class Superset():
 
-def get_database(url,token):
-    http = f'{url}api/v1/database'
-    headers = { 'Content-type': 'application/json', 'Authorization': f'Bearer {token}'}
-    response = requests.get(http, headers=headers)
-    return response
+    url = ''
+    token = ''
 
-def get_datasets(url,token):
-    http = f'{url}api/v1/dataset'
-    headers = { 'Content-type': 'application/json', 'Authorization': f'Bearer {token}'}
-    response = requests.get(http, headers=headers)
-    return response
+    def __init__(self, url):
+        self.url = url
+        self.login()
 
-def get_queries(url,token):
-    http = f'{url}/api/v1/query/'
-    headers = { 'Content-type': 'application/json', 'Authorization': f'Bearer {token}'}
-    response = requests.get(http, headers=headers)
-    return response
+    def login(self):
+        http = f'{self.url}api/v1/security/login'
+        headers = { 'Content-type': 'application/json', }
+        data = '{ "password": "admin", "provider": "db",  "refresh": true,  "username": "admin"}'
+        response = requests.post(http, headers=headers, data=data)
+#        print(response.json())
+        self.token = response.json()['access_token']
 
-def create_database(url,token,schema):
-    http = f'{url}api/v1/database'
-    csrf_url = f'{url}/api/v1/security/csrf_token'
-    headers = { 'Content-type': 'application/json', 'Authorization': f'Bearer {token}',
+    def get_database(self):
+        http = f'{self.url}api/v1/database'
+        headers = { 'Content-type': 'application/json',
+                'Authorization': f'Bearer {self.token}'}
+        response = requests.get(http, headers=headers)
+        return response
+
+    def get_datasets(self):
+        http = f'{self.url}api/v1/dataset'
+        headers = { 'Content-type': 'application/json',
+                'Authorization': f'Bearer {self.token}'}
+        response = requests.get(http, headers=headers)
+        return response
+
+    def get_queries(self):
+        http = f'{self.url}/api/v1/query/'
+        headers = { 'Content-type': 'application/json',
+                'Authorization': f'Bearer {self.token}'}
+        response = requests.get(http, headers=headers)
+        return response
+
+    def create_database(self,schema):
+        http = f'{self.url}api/v1/database'
+        # this doesn't work
+        csrf_url = f'{self.url}/api/v1/security/csrf_token'
+        headers = { 'Content-type': 'application/json',
+                'Authorization': f'Bearer {self.token}',
                 'X-CSRFToken': csrf_url}
-    data = { 'schema': schema }
-    response = requests.post(http, headers=headers, data=data)
-    return response
+        data = { 'schema': schema }
+        response = requests.post(http, headers=headers, data=data)
+        return response
 
 
 def arguments():
@@ -57,18 +71,16 @@ if __name__ == "__main__":
     args = arguments()
     url = args['url']
     
-    token = login(url)
-    print("Get token")
-    print (f'access token: {token}')
+    superset = Superset(url)
 
-    result = get_database(url,token)
+    result = superset.get_database()
 
     print("Get database")
     print(result.status_code)
     print(result.headers)
 #    pprint.pprint(result.json())
 
-    datasets = get_datasets(url, token)
+    datasets = superset.get_datasets()
 
     print("Get datasets")
     print(datasets.status_code)
@@ -113,7 +125,7 @@ if __name__ == "__main__":
 #    print(result.headers)
 #    pprint.pprint(result.json())
 
-    result = get_queries(url,token)
+    result = superset.get_queries()
     print('Queries:')
     print(result.status_code)
     print(result.headers)
