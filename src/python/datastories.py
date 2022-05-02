@@ -32,20 +32,6 @@ class Superset():
         response = requests.get(http, headers=headers)
         return response
 
-    def get_datasets(self):
-        http = f'{self.url}api/v1/dataset'
-        headers = { 'Content-type': 'application/json',
-                'Authorization': f'Bearer {self.token}'}
-        response = requests.get(http, headers=headers)
-        return response
-
-    def get_queries(self):
-        http = f'{self.url}/api/v1/query/'
-        headers = { 'Content-type': 'application/json',
-                'Authorization': f'Bearer {self.token}'}
-        response = requests.get(http, headers=headers)
-        return response
-
     def create_database(self,schema):
         http = f'{self.url}api/v1/database'
         # this doesn't work
@@ -57,6 +43,42 @@ class Superset():
         response = requests.post(http, headers=headers, data=data)
         return response
 
+    def get_datasets(self):
+        http = f'{self.url}api/v1/dataset'
+        headers = { 'Content-type': 'application/json',
+                'Authorization': f'Bearer {self.token}'}
+        response = requests.get(http, headers=headers)
+        return response
+
+    def create_dataset(self, data):
+        http = f'{self.url}api/v1/dataset'
+        headers = { 'Content-type': 'application/json',
+                'Authorization': f'Bearer {self.token}'}
+        response = requests.post(http, headers=headers, data=data)
+        return response
+
+    def get_queries(self):
+        http = f'{self.url}/api/v1/query/'
+        headers = { 'Content-type': 'application/json',
+                'Authorization': f'Bearer {self.token}'}
+        response = requests.get(http, headers=headers)
+        return response
+
+    def get_reports(self, data):
+        http = f'{self.url}api/v1/report'
+        headers = { 'Content-type': 'application/json',
+                'Authorization': f'Bearer {self.token}'}
+        response = requests.get(http, headers=headers, schema=data)
+        return response
+
+    def create_reports(self, data):
+        http = f'{self.url}api/v1/dataset'
+        headers = { 'Content-type': 'application/json',
+                'Authorization': f'Bearer {self.token}'}
+        response = requests.post(http, header=headers, schema=data)
+        return response
+
+ 
 
 def arguments():
     ap = argparse.ArgumentParser(description='Readhtml and convert to xhtml"')
@@ -89,6 +111,7 @@ if __name__ == "__main__":
     else:
         pprint.pprint(datasets.json())
 
+        # dit moet nog wat anders:
         schema = { "id": 0,
                 "result": {
                "allow_ctas": True,
@@ -117,13 +140,12 @@ if __name__ == "__main__":
                "sqlalchemy_uri": "string"
              }
            }
+        result = superset.create_database(schema)
 
-#    result = create_database(url,token,schema)
-
-#    print("Create database")
-#    print(result.status_code)
-#    print(result.headers)
-#    pprint.pprint(result.json())
+        print("Create database")
+        print(result.status_code)
+        print(result.headers)
+        pprint.pprint(result.json())
 
     result = superset.get_queries()
     print('Queries:')
