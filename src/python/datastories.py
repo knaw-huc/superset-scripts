@@ -12,18 +12,39 @@ class Superset():
 
     url = ''
     token = ''
+    csrf_token = ''
+    username = ''
+    password = ''
+    session = None
 
-    def __init__(self, url):
+    def __init__(self, url, username='admin', password='admin'):
         self.url = url
+        self.username = username
+        self.password = password
+        self.session = requests.session()
         self.login()
 
     def login(self):
         http = f'{self.url}api/v1/security/login'
         headers = { 'Content-type': 'application/json', }
-        data = '{ "password": "admin", "provider": "db",  "refresh": true,  "username": "admin"}'
-        response = requests.post(http, headers=headers, data=data)
-#        print(response.json())
+        data = {
+            "password": self.password,
+            "provider": "db",
+            "refresh": False,
+            "username": self.username
+        }
+        pprint.pprint(data)
+        response = self.session.post(url=http, headers=headers, json=data)
+        pprint.pprint(response.json())
         self.token = response.json()['access_token']
+
+        headers = { 'Content-type': 'application/json',
+                'Authorization': f'Bearer {self.token}'}
+        csrf_url = f'{self.url}/api/v1/security/csrf_token'
+        response = self.session.get(url=csrf_url, headers=headers)
+        pprint.pprint(response.json())
+        self.csrf_token = response.json()['result']
+#        pprint.pprint(response.json()['result'])
 
     def get_database(self):
         http = f'{self.url}api/v1/database'
@@ -35,10 +56,9 @@ class Superset():
     def create_database(self,schema):
         http = f'{self.url}api/v1/database'
         # this doesn't work
-        csrf_url = f'{self.url}/api/v1/security/csrf_token'
         headers = { 'Content-type': 'application/json',
                 'Authorization': f'Bearer {self.token}',
-                'X-CSRFToken': csrf_url}
+                'X-CSRFToken': self.csrf_token}
         data = { 'schema': schema }
         response = requests.post(http, headers=headers, data=data)
         return response
@@ -95,6 +115,7 @@ if __name__ == "__main__":
     
     superset = Superset(url)
 
+
     result = superset.get_database()
 
     print("Get database")
@@ -109,7 +130,8 @@ if __name__ == "__main__":
     if datasets.status_code!=200:
         print(dataset.message)
     else:
-        pprint.pprint(datasets.json())
+        pass
+#        pprint.pprint(datasets.json())
 
         # dit moet nog wat anders:
         schema = { "id": 0,
